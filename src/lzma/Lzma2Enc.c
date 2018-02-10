@@ -720,10 +720,10 @@ SRes Lzma2Enc_Encode2(CLzma2EncHandle pp,
   CLzma2Enc *p = (CLzma2Enc *)pp;
 
   if (inStream && inData)
-    return E_INVALIDARG;
+    return SZ_ERROR_PARAM;
 
   if (outStream && outBuf)
-    return E_INVALIDARG;
+    return SZ_ERROR_PARAM;
 
   {
     unsigned i;

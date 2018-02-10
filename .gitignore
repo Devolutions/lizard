@@ -1,4 +1,4 @@
-
+.idea/
 build/
 Debug/
 Release/
@@ -8,3 +8,5 @@ Release/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
+cmake-build*
+

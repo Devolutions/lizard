@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archiveData, size_t archiveSize);
+int lizard_main(int argc, char** args);
 
 #ifdef __cplusplus
 }
