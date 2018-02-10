@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-
+BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archiveData, size_t archiveSize);
 
 #ifdef __cplusplus
 }

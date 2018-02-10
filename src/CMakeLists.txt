@@ -1,2 +1,104 @@
 
-add_subdirectory(lzma)
+set(MODULE_NAME "lizard")
+set(MODULE_PREFIX "LIZARD")
+
+set(LZMA_DIR "lzma")
+
+include_directories(${LZMA_DIR})
+
+set(${MODULE_PREFIX}_LZMA_HEADERS
+	${LZMA_DIR}/7z.h
+	${LZMA_DIR}/7zAlloc.h
+	${LZMA_DIR}/7zBuf.h
+	${LZMA_DIR}/7zCrc.h
+	${LZMA_DIR}/7zFile.h
+	${LZMA_DIR}/7zMemInStream.h
+	${LZMA_DIR}/7zTypes.h
+	${LZMA_DIR}/7zVersion.h
+	${LZMA_DIR}/Aes.h
+	${LZMA_DIR}/Alloc.h
+	${LZMA_DIR}/Bcj2.h
+	${LZMA_DIR}/Bra.h
+	${LZMA_DIR}/Compiler.h
+	${LZMA_DIR}/CpuArch.h
+	${LZMA_DIR}/Delta.h
+	${LZMA_DIR}/DllSecur.h
+	${LZMA_DIR}/LzFind.h
+	${LZMA_DIR}/LzFindMt.h
+	${LZMA_DIR}/LzHash.h
+	${LZMA_DIR}/Lzma2Dec.h
+	${LZMA_DIR}/Lzma2Enc.h
+	${LZMA_DIR}/Lzma86.h
+	${LZMA_DIR}/LzmaDec.h
+	${LZMA_DIR}/LzmaEnc.h
+	${LZMA_DIR}/LzmaLib.h
+	${LZMA_DIR}/MtCoder.h
+	${LZMA_DIR}/Ppmd.h
+	${LZMA_DIR}/Ppmd7.h
+	${LZMA_DIR}/Precomp.h
+	${LZMA_DIR}/RotateDefs.h
+	${LZMA_DIR}/Sha256.h
+	${LZMA_DIR}/Sort.h
+	${LZMA_DIR}/Threads.h
+	${LZMA_DIR}/Xz.h
+	${LZMA_DIR}/XzCrc64.h
+	${LZMA_DIR}/XzEnc.h
+	)
+
+set(${MODULE_PREFIX}_LZMA_SOURCES
+	${LZMA_DIR}/7zAlloc.c
+	${LZMA_DIR}/7zArcIn.c
+	${LZMA_DIR}/7zBuf.c
+	${LZMA_DIR}/7zBuf2.c
+	${LZMA_DIR}/7zCrc.c
+	${LZMA_DIR}/7zCrcOpt.c
+	${LZMA_DIR}/7zDec.c
+	${LZMA_DIR}/7zFile.c
+	${LZMA_DIR}/7zMemInStream.c
+	${LZMA_DIR}/7zStream.c
+	${LZMA_DIR}/Aes.c
+	${LZMA_DIR}/AesOpt.c
+	${LZMA_DIR}/Alloc.c
+	${LZMA_DIR}/Bcj2.c
+	${LZMA_DIR}/Bcj2Enc.c
+	${LZMA_DIR}/Bra.c
+	${LZMA_DIR}/Bra86.c
+	${LZMA_DIR}/BraIA64.c
+	${LZMA_DIR}/CpuArch.c
+	${LZMA_DIR}/Delta.c
+	${LZMA_DIR}/DllSecur.c
+	${LZMA_DIR}/LzFind.c
+	${LZMA_DIR}/LzFindMt.c
+	${LZMA_DIR}/Lzma2Dec.c
+	${LZMA_DIR}/Lzma2Enc.c
+	${LZMA_DIR}/Lzma86Dec.c
+	${LZMA_DIR}/Lzma86Enc.c
+	${LZMA_DIR}/LzmaDec.c
+	${LZMA_DIR}/LzmaEnc.c
+	${LZMA_DIR}/LzmaLib.c
+	${LZMA_DIR}/MtCoder.c
+	${LZMA_DIR}/Ppmd7.c
+	${LZMA_DIR}/Ppmd7Dec.c
+	${LZMA_DIR}/Ppmd7Enc.c
+	${LZMA_DIR}/Sha256.c
+	${LZMA_DIR}/Sort.c
+	${LZMA_DIR}/Threads.c
+	${LZMA_DIR}/Xz.c
+	${LZMA_DIR}/XzCrc64.c
+	${LZMA_DIR}/XzCrc64Opt.c
+	${LZMA_DIR}/XzDec.c
+	${LZMA_DIR}/XzEnc.c
+	${LZMA_DIR}/XzIn.c
+	)
+
+set(${MODULE_PREFIX}_HEADERS
+	)
+
+set(${MODULE_PREFIX}_SOURCES
+	lizard.c
+	)
+
+add_library(${MODULE_NAME} STATIC
+	${${MODULE_PREFIX}_LZMA_SOURCES} ${${MODULE_PREFIX}_LZMA_HEADERS}
+	${${MODULE_PREFIX}_SOURCES} ${${MODULE_PREFIX}_HEADERS})
+

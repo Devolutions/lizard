@@ -2,6 +2,43 @@ cmake_minimum_required(VERSION 3.0)
 
 project(lizard C)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+if(MSVC)
+	include(MSVCRuntime)
+
+	if(NOT DEFINED MSVC_RUNTIME)
+		set(MSVC_RUNTIME "static")
+	endif()
+
+	configure_msvc_runtime()
+endif()
+
+if(WIN32)
+	set(C_FLAGS "")
+	set(C_FLAGS "${C_FLAGS} -D_UNICODE")
+	set(C_FLAGS "${C_FLAGS} -D_CRT_SECURE_NO_WARNINGS")
+	set(C_FLAGS "${C_FLAGS} -DWIN32_LEAN_AND_MEAN")
+	set(C_FLAGS "${C_FLAGS} -D_WINSOCK_DEPRECATED_NO_WARNINGS")
+
+	if(NOT DEFINED CMAKE_WINDOWS_VERSION)
+		set(CMAKE_WINDOWS_VERSION "WINXP")
+	endif()
+
+	if(CMAKE_WINDOWS_VERSION STREQUAL "WINXP")
+		set(C_FLAGS "${C_FLAGS} -DWINVER=0x0501 -D_WIN32_WINNT=0x0501")
+	elseif(CMAKE_WINDOWS_VERSION STREQUAL "WIN7")
+		set(C_FLAGS "${C_FLAGS} -DWINVER=0x0601 -D_WIN32_WINNT=0x0601")
+	elseif(CMAKE_WINDOWS_VERSION STREQUAL "WIN8")
+		set(C_FLAGS "${C_FLAGS} -DWINVER=0x0602 -D_WIN32_WINNT=0x0602")
+	elseif(CMAKE_WINDOWS_VERSION STREQUAL "WIN10")
+		set(C_FLAGS "${C_FLAGS} -DWINVER=0x0A00 -D_WIN32_WINNT=0x0A00")
+	endif()
+
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_FLAGS}")
+endif()
+
 include_directories(include)
 
 add_subdirectory(src)
