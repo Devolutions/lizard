@@ -1,1 +1,10 @@
+
 build/
+Debug/
+Release/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
