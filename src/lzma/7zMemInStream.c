@@ -8,7 +8,7 @@
 
 #include <string.h>
 
-static SRes MemInStream_Look(void *pp, const void **buf, size_t *size)
+static SRes MemInStream_Look(const void *pp, const void **buf, size_t *size)
 {
   CMemInStream *p = (CMemInStream *)pp;
   size_t remaining = p->end - p->pos;
@@ -28,14 +28,14 @@ static SRes MemInStream_Look(void *pp, const void **buf, size_t *size)
   return SZ_OK;
 }
 
-static SRes MemInStream_Skip(void *pp, size_t offset)
+static SRes MemInStream_Skip(const void *pp, size_t offset)
 {
   CMemInStream *p = (CMemInStream *)pp;
   p->pos += offset;
   return SZ_OK;
 }
 
-static SRes MemInStream_Read(void *pp, void *buf, size_t *size)
+static SRes MemInStream_Read(const void *pp, void *buf, size_t *size)
 {
   CMemInStream *p = (CMemInStream *)pp;
   size_t remaining = p->end - p->pos;
@@ -59,7 +59,7 @@ static SRes MemInStream_Read(void *pp, void *buf, size_t *size)
   return SZ_OK;
 }
 
-static SRes MemInStream_Seek(void *pp, Int64 *pos, ESzSeek origin)
+static SRes MemInStream_Seek(const void *pp, Int64 *pos, ESzSeek origin)
 {
   CMemInStream *p = (CMemInStream *)pp;
   switch (origin)
