@@ -88,7 +88,7 @@
  * Character Types:
  *
  * UTF8:	uint8_t		8 bits
- * UTF16:	uint16_t		16 bits
+ * UTF16:	uint16_t	16 bits
  * UTF32:	uint32_t	32 bits
  */
 
@@ -125,22 +125,6 @@ ConversionResult ConvertUTF8toUTF16(
 ConversionResult ConvertUTF16toUTF8(
 	const uint16_t** sourceStart, const uint16_t* sourceEnd,
 	uint8_t** targetStart, uint8_t* targetEnd, ConversionFlags flags);
-
-ConversionResult ConvertUTF8toUTF32(
-	const uint8_t** sourceStart, const uint8_t* sourceEnd,
-	uint32_t** targetStart, uint32_t* targetEnd, ConversionFlags flags);
-
-ConversionResult ConvertUTF32toUTF8(
-	const uint32_t** sourceStart, const uint32_t* sourceEnd,
-	uint8_t** targetStart, uint8_t* targetEnd, ConversionFlags flags);
-
-ConversionResult ConvertUTF16toUTF32(
-	const uint16_t** sourceStart, const uint16_t* sourceEnd,
-	uint32_t** targetStart, uint32_t* targetEnd, ConversionFlags flags);
-
-ConversionResult ConvertUTF32toUTF16(
-	const uint32_t** sourceStart, const uint32_t* sourceEnd,
-	uint16_t** targetStart, uint16_t* targetEnd, ConversionFlags flags);
 
 bool isLegalUTF8Sequence(const uint8_t *source, const uint8_t *sourceEnd);
 
