@@ -3,9 +3,12 @@
 
 int main(int argc, char** argv)
 {
+	int index;
+	int count;
 	LzArchive* archive;
 	size_t archiveSize;
 	uint8_t* archiveData;
+	char filename[LZ_MAX_PATH];
 
 	archive = LzArchive_New();
 
@@ -13,6 +16,17 @@ int main(int argc, char** argv)
 
 	LzArchive_OpenData(archive, archiveData, archiveSize);
 
+	count = LzArchive_NumFiles(archive);
+
+	for (index = 0; index < count; index++)
+	{
+		LzArchive_GetFileName(archive, index, filename, sizeof(filename));
+		printf("%s\n", filename);
+
+		LzArchive_Extract(archive, index, LzFile_Base(filename));
+	}
+
+	LzArchive_Close(archive);
 	LzArchive_Free(archive);
 
 	return 0;

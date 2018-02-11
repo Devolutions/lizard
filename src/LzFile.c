@@ -135,28 +135,22 @@ const char* LzFile_Extension(const char* filename, bool dot)
 
 FILE* LzFile_Open(const char* path, const char* mode)
 {
-#ifdef _WIN32
+#ifndef _WIN32
 	return fopen(path, mode);
 #else
-	LPWSTR lpPathW = NULL;
-	LPWSTR lpModeW = NULL;
-	FILE* result = NULL;
+	FILE* fp = NULL;
+	uint16_t modeW[32];
+	uint16_t pathW[LZ_MAX_PATH];
 
 	if (!path || !mode)
 		return NULL;
 
-	if (ConvertToUnicode(CP_UTF8, 0, path, -1, &lpPathW, 0) < 1)
-		goto cleanup;
+	LzUnicode_UTF8toUTF16((uint8_t*) mode, -1, modeW, sizeof(modeW) / 2);
+	LzUnicode_UTF8toUTF16((uint8_t*) path, -1, pathW, sizeof(pathW) / 2);
 
-	if (ConvertToUnicode(CP_UTF8, 0, mode, -1, &lpModeW, 0) < 1)
-		goto cleanup;
+	fp = _wfopen(pathW, modeW);
 
-	result = _wfopen(lpPathW, lpModeW);
-
-cleanup:
-	free(lpPathW);
-	free(lpModeW);
-	return result;
+	return fp;
 #endif
 }
 
@@ -199,4 +193,26 @@ uint8_t* LzFile_Load(const char* filename, size_t* size, uint32_t flags)
 exit:
 	fclose(fp);
 	return data;
+}
+
+bool LzFile_Save(const char* filename, uint8_t* data, size_t size, uint32_t flags)
+{
+	FILE* fp = NULL;
+	bool success = true;
+
+	if (!filename || !data)
+		return false;
+
+	fp = LzFile_Open(filename, "wb");
+
+	if (!fp)
+		return false;
+
+	if (fwrite(data, 1, size, fp) != size)
+	{
+		success = false;
+	}
+
+	fclose(fp);
+	return success;
 }

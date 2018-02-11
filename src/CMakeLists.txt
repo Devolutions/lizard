@@ -101,7 +101,7 @@ if(LZMA_THREADS)
 endif()
 
 set(LIZARD_HEADERS
-	LzUnicode.h)
+	"")
 
 set(LIZARD_SOURCES
 	LzArchive.c

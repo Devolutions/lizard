@@ -38,7 +38,36 @@ See the header file "utf.h" for complete documentation.
 
 ------------------------------------------------------------------------ */
 
-#include "LzUnicode.h"
+#include <lizard/lizard.h>
+
+/*
+* Character Types:
+*
+* UTF8:		uint8_t		8 bits
+* UTF16:	uint16_t	16 bits
+* UTF32:	uint32_t	32 bits
+*/
+
+/* Some fundamental constants */
+#define UNI_REPLACEMENT_CHAR	(uint32_t)0x0000FFFD
+#define UNI_MAX_BMP		(uint32_t)0x0000FFFF
+#define UNI_MAX_UTF16		(uint32_t)0x0010FFFF
+#define UNI_MAX_UTF32		(uint32_t)0x7FFFFFFF
+#define UNI_MAX_LEGAL_UTF32	(uint32_t)0x0010FFFF
+
+typedef enum
+{
+	conversionOK,   /* conversion successful */
+	sourceExhausted, /* partial character in source, but hit end */
+	targetExhausted, /* insuff. room in target for conversion */
+	sourceIllegal  /* source sequence is illegal/malformed */
+} ConversionResult;
+
+typedef enum
+{
+	strictConversion = 0,
+	lenientConversion
+} ConversionFlags;
 
 static const int halfShift  = 10; /* used for shifting by 10 bits */
 
@@ -476,4 +505,89 @@ ConversionResult ConvertUTF8toUTF16(
 	*sourceStart = source;
 	*targetStart = target;
 	return result;
+}
+
+/**
+ * Lizard Unicode API
+ */
+
+size_t lz_wcslen(const uint16_t* str)
+{
+	uint16_t* p = (uint16_t*) str;
+
+	if (!p)
+		return 0;
+
+	while (*p)
+		p++;
+
+	return (p - str);
+}
+
+int LzUnicode_UTF8toUTF16(const uint8_t* src, int cchSrc, uint16_t* dst, int cchDst)
+{
+	int length;
+	uint16_t* dstBeg = NULL;
+	uint16_t* dstEnd = NULL;
+	const uint8_t* srcBeg;
+	const uint8_t* srcEnd;
+	ConversionResult result;
+
+	if (cchSrc == -1)
+		cchSrc = strlen((char*) src) + 1;
+
+	srcBeg = src;
+	srcEnd = &src[cchSrc];
+
+	if (cchDst == 0)
+	{
+		result = ConvertUTF8toUTF16(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+
+		length = dstBeg - ((uint16_t*) NULL);
+	}
+	else
+	{
+		dstBeg = dst;
+		dstEnd = &dst[cchDst];
+
+		result = ConvertUTF8toUTF16(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+
+		length = dstBeg - dst;
+	}
+
+	return (result == conversionOK) ? length : 0;
+}
+
+int LzUnicode_UTF16toUTF8(const uint16_t* src, int cchSrc, uint8_t* dst, int cchDst)
+{
+	int length;
+	uint8_t* dstBeg = NULL;
+	uint8_t* dstEnd = NULL;
+	const uint16_t* srcBeg;
+	const uint16_t* srcEnd;
+	ConversionResult result;
+
+	if (cchSrc == -1)
+		cchSrc = lz_wcslen((uint16_t*) src) + 1;
+
+	srcBeg = src;
+	srcEnd = &src[cchSrc];
+
+	if (cchDst == 0)
+	{
+		result = ConvertUTF16toUTF8(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+
+		length = dstBeg - ((uint8_t*) NULL);
+	}
+	else
+	{
+		dstBeg = dst;
+		dstEnd = &dst[cchDst];
+
+		result = ConvertUTF16toUTF8(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+
+		length = dstBeg - dst;
+	}
+
+	return (result == conversionOK) ? length : 0;
 }
