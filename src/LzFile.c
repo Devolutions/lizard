@@ -104,7 +104,7 @@ char* LzFile_Dir(const char* filename)
 	if (!dir)
 		return NULL;
 
-	CopyMemory(dir, filename, length);
+	memcpy(dir, filename, length);
 	dir[length] = '\0';
 
 	return dir;
@@ -279,30 +279,38 @@ bool LzFile_Delete(const char* filename)
 	return DeleteFileW(filenameW) ? true : false;
 #else
 	int status;
-	status = unlink(lpFileName);
+	status = unlink(filename);
 	return (status != -1) ? true : false;
 #endif
 }
 
 int LzMkPath(const char* path, int mode)
 {
+	char tmp;
+	char *p, *q;
 	int status = 0;
-	bool done = false;
-	char* sep = (char*) path;
 
-	while (!done)
+	p = (char*) path;
+	q = strchr(p, LZ_PATH_SEPARATOR_CHR);
+
+	while (p || q)
 	{
-		sep += strspn(sep, "/");
-		sep += strcspn(sep, "/");
+		if (q)
+		{
+			tmp = *q;
+			*q = '\0';
+		}
 
-		done = (*sep == '\0');
-
-		*sep = '\0';
 		status = LzMkDir(path, mode);
-		*sep = '/';
 
-		if (status != 0)
+		if (q)
+			*q = tmp;
+
+		if (!q)
 			break;
+
+		p = q + 1;
+		q = strchr(p, LZ_PATH_SEPARATOR_CHR);
 	}
 
 	return status;
