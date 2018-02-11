@@ -105,6 +105,7 @@ set(LIZARD_HEADERS
 
 set(LIZARD_SOURCES
 	LzArchive.c
+	LzEnv.c
 	LzFile.c
 	LzUnicode.c)
 

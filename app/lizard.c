@@ -11,7 +11,7 @@ static bool lizard_verbose = false;
 void lizard_print_help()
 {
 	printf(
-		"Lizard embeddable 7-zip extractor\n"
+		"Lizard: A 7-Zip packer that sticks\n"
 		"\n"
 		"Usage:\n"
 		"    lizard [options]\n"
@@ -39,8 +39,6 @@ int main(int argc, char** argv)
 	int count;
 	char* arg;
 	LzArchive* archive;
-	size_t archiveSize;
-	uint8_t* archiveData;
 	char filename[LZ_MAX_PATH];
 	char fullname[LZ_MAX_PATH];
 
@@ -99,9 +97,11 @@ int main(int argc, char** argv)
 
 	archive = LzArchive_New();
 
-	archiveData = LzFile_Load(lizard_input, &archiveSize, 0);
-
-	LzArchive_OpenData(archive, archiveData, archiveSize);
+	if (LzArchive_OpenFile(archive, lizard_input) != LZ_OK)
+	{
+		fprintf(stderr, "could not open file: %s\n", lizard_input);
+		return 0;
+	}
 
 	count = LzArchive_Count(archive);
 

@@ -155,7 +155,7 @@ FILE* LzFile_Open(const char* path, const char* mode)
 #endif
 }
 
-uint8_t* LzFile_Load(const char* filename, size_t* size, uint32_t flags)
+uint8_t* LzFile_Load(const char* filename, size_t* size, uint32_t padding)
 {
 	FILE* fp = NULL;
 	uint8_t* data = NULL;
@@ -174,12 +174,12 @@ uint8_t* LzFile_Load(const char* filename, size_t* size, uint32_t flags)
 	*size = LzFile_Tell(fp);
 	LzFile_Seek(fp, 0, SEEK_SET);
 
-	data = malloc(*size + 1);
+	data = malloc(*size + padding);
 
 	if (!data)
 		goto exit;
 
-	data[*size] = '\0';
+	memset(&data[*size], 0, padding);
 
 	if (fread(data, 1, *size, fp) != *size)
 	{
@@ -188,15 +188,15 @@ uint8_t* LzFile_Load(const char* filename, size_t* size, uint32_t flags)
 		*size = 0;
 	}
 
-	if (flags)
-		*size = *size + 1;
+	if (padding)
+		*size += padding;
 
 exit:
 	fclose(fp);
 	return data;
 }
 
-bool LzFile_Save(const char* filename, uint8_t* data, size_t size, uint32_t flags)
+bool LzFile_Save(const char* filename, uint8_t* data, size_t size, int mode)
 {
 	FILE* fp = NULL;
 	bool success = true;
@@ -216,6 +216,39 @@ bool LzFile_Save(const char* filename, uint8_t* data, size_t size, uint32_t flag
 
 	fclose(fp);
 	return success;
+}
+
+bool LzFile_Move(const char* src, const char* dst, bool replace)
+{
+#ifdef _WIN32
+	uint16_t srcW[LZ_MAX_PATH];
+	uint16_t dstW[LZ_MAX_PATH];
+
+	LzUnicode_UTF8toUTF16((uint8_t*) src, -1, srcW, sizeof(srcW) / 2);
+	LzUnicode_UTF8toUTF16((uint8_t*) dst, -1, dstW, sizeof(dstW) / 2);
+
+	return MoveFileW(srcW, dstW) ? true : false;
+#else
+	int status;
+	struct stat st;
+
+	status = stat(dst, &st);
+
+	if (!replace)
+	{
+		if (status == 0)
+			return false; /* ERROR_ALREADY_EXISTS */
+	}
+	else
+	{
+		if ((status == 0) && ((st.st_mode & S_IWUSR) == 0))
+			return false; /* ERROR_ACCESS_DENIED */
+	}
+
+	status = rename(src, dst);
+
+	return (status == 0) ? true : false;
+#endif
 }
 
 bool LzFile_Exists(const char* filename)

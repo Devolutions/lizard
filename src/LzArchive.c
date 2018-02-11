@@ -13,10 +13,38 @@ struct lz_archive
 	CSzArEx db;
 	bool initialized;
 	ISzAlloc allocator;
+	size_t archiveSize;
+	uint8_t* archiveData;
 	CMemInStream dataStream;
 };
 
-void Lizard_Init()
+int LzMapRes(int res)
+{
+	int status = LZ_ERROR_FAIL;
+
+	switch (res)
+	{
+		case SZ_OK: status = LZ_OK; break;
+		case SZ_ERROR_DATA: status = LZ_ERROR_DATA; break;
+		case SZ_ERROR_MEM: status = LZ_ERROR_MEM; break;
+		case SZ_ERROR_CRC: status = LZ_ERROR_CRC; break;
+		case SZ_ERROR_UNSUPPORTED: status = LZ_ERROR_UNSUPPORTED; break;
+		case SZ_ERROR_PARAM: status = LZ_ERROR_PARAM; break;
+		case SZ_ERROR_INPUT_EOF: status = LZ_ERROR_INPUT_EOF; break;
+		case SZ_ERROR_OUTPUT_EOF: status = LZ_ERROR_OUTPUT_EOF; break;
+		case SZ_ERROR_READ: status = LZ_ERROR_READ; break;
+		case SZ_ERROR_WRITE: status = LZ_ERROR_WRITE; break;
+		case SZ_ERROR_PROGRESS: status = LZ_ERROR_PROGRESS; break;
+		case SZ_ERROR_FAIL: status = LZ_ERROR_FAIL; break;
+		case SZ_ERROR_THREAD: status = LZ_ERROR_THREAD; break;
+		case SZ_ERROR_ARCHIVE: status = LZ_ERROR_ARCHIVE; break;
+		case SZ_ERROR_NO_ARCHIVE: status = LZ_ERROR_NO_ARCHIVE; break;
+	}
+
+	return status;
+}
+
+void LzInit()
 {
 	if (g_Initialized)
 		return;
@@ -28,9 +56,9 @@ void Lizard_Init()
 int LzArchive_Init(LzArchive* ctx)
 {
 	if (ctx->initialized)
-		return SZ_OK;
+		return LZ_OK;
 
-	Lizard_Init();
+	LzInit();
 	
 	SzArEx_Init(&ctx->db);
 
@@ -39,27 +67,40 @@ int LzArchive_Init(LzArchive* ctx)
 
 	ctx->initialized = true;
 	
-	return SZ_OK;
+	return LZ_OK;
 }
 
 int LzArchive_OpenData(LzArchive* ctx, const uint8_t* data, size_t size)
 {
-	SRes res;
 	int status;
 
 	status = LzArchive_Init(ctx);
 
-	if (status != SZ_OK)
+	if (status != LZ_OK)
 		return status;
 
 	MemInStream_Init(&ctx->dataStream, data, size);
 
-	res = SzArEx_Open(&ctx->db, &ctx->dataStream.s, &ctx->allocator, &ctx->allocator);
+	status = LzMapRes(SzArEx_Open(&ctx->db, &ctx->dataStream.s, &ctx->allocator, &ctx->allocator));
 
-	if (res != SZ_OK)
-		return -1;
+	if (status != LZ_OK)
+		return status;
 
-	return SZ_OK;
+	return LZ_OK;
+}
+
+int LzArchive_OpenFile(LzArchive* ctx, const char* filename)
+{
+	int status;
+
+	ctx->archiveData = LzFile_Load(filename, &ctx->archiveSize, 0);
+
+	if (!ctx->archiveData)
+		return LZ_ERROR_FILE;
+
+	status = LzArchive_OpenData(ctx, ctx->archiveData, ctx->archiveSize);
+
+	return status;
 }
 
 int LzArchive_Count(LzArchive* ctx)
@@ -82,7 +123,7 @@ size_t LzArchive_GetFileSize(LzArchive* ctx, int index)
 	const CSzArEx* db = &ctx->db;
 
 	if (index >= (int) db->NumFiles)
-		return false;
+		return 0;
 
 	return SzArEx_GetFileSize(db, index);
 }
@@ -95,7 +136,7 @@ int LzArchive_GetFileName(LzArchive* ctx, int index, char* filename, int cch)
 	const CSzArEx* db = &ctx->db;
 
 	if (index >= (int) db->NumFiles)
-		return -1;
+		return LZ_ERROR_PARAM;
 
 	offset = db->FileNameOffsets[index];
 	length = db->FileNameOffsets[index + 1] - offset;
@@ -127,9 +168,7 @@ int LzArchive_Find(LzArchive* ctx, const char* filename)
 		}
 	}
 
-	status = found ? index : -1;
-
-	printf("find: %d:%s", status, filename);
+	status = found ? index : LZ_ERROR_NOT_FOUND;
 
 	return status;
 }
@@ -142,17 +181,23 @@ int LzArchive_ExtractData(LzArchive* ctx, int index, const char* filename, uint8
 	uint32_t blockIndex = 0xFFFFFFFF;
 	const CSzArEx* db = &ctx->db;
 
+	if (!outputData || !outputSize)
+		return LZ_ERROR_PARAM;
+
+	*outputData = NULL;
+	*outputSize = 0;
+
 	if (index < 0)
 		index = LzArchive_Find(ctx, filename);
 
 	if ((index < 0) || (index >= (int) db->NumFiles))
-		return -1;
+		return LZ_ERROR_PARAM;
 
 	if (SzArEx_IsDir(db, index))
-		return -1;
+		return LZ_ERROR_PARAM;
 
-	status = SzArEx_Extract(db, &ctx->dataStream.s, index, &blockIndex,
-		outputData, outputSize, &offset, &processedSize, &ctx->allocator, &ctx->allocator);
+	status = LzMapRes(SzArEx_Extract(db, &ctx->dataStream.s, index, &blockIndex,
+		outputData, outputSize, &offset, &processedSize, &ctx->allocator, &ctx->allocator));
 
 	*outputData += offset;
 	*outputSize = processedSize;
@@ -175,7 +220,11 @@ int LzArchive_ExtractFile(LzArchive* ctx, int index, const char* inputName, cons
 
 	status = LzArchive_ExtractData(ctx, index, inputName, &outputData, &outputSize);
 
-	LzFile_Save(outputName, outputData, outputSize, 0);
+	if (status != LZ_OK)
+		return status;
+
+	if (!LzFile_Save(outputName, outputData, outputSize, 0))
+		status = LZ_ERROR_FILE;
 
 	return status;
 }
@@ -183,7 +232,14 @@ int LzArchive_ExtractFile(LzArchive* ctx, int index, const char* inputName, cons
 int LzArchive_Close(LzArchive* ctx)
 {
 	SzArEx_Free(&ctx->db, &ctx->allocator);
-	return SZ_OK;
+
+	if (ctx->archiveData)
+	{
+		ctx->archiveData = NULL;
+		free(ctx->archiveData);
+	}
+
+	return LZ_OK;
 }
 
 LzArchive* LzArchive_New(void)
