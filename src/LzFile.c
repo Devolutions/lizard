@@ -10,6 +10,7 @@
 #endif
 
 #ifdef _WIN32
+#include <io.h>
 #include <shlwapi.h>
 #include <shlobj.h>
 #pragma comment(lib, "shlwapi.lib")
@@ -215,4 +216,105 @@ bool LzFile_Save(const char* filename, uint8_t* data, size_t size, uint32_t flag
 
 	fclose(fp);
 	return success;
+}
+
+bool LzFile_Exists(const char* filename)
+{
+#ifdef _WIN32
+	uint16_t filenameW[LZ_MAX_PATH];
+
+	LzUnicode_UTF8toUTF16((uint8_t*) filename, -1, filenameW, sizeof(filenameW) / 2);
+
+	return PathFileExistsW(filenameW) ? true : false;
+#else
+	struct stat stat_info;
+
+	if (stat(filename, &stat_info) != 0)
+		return false;
+
+	return true;
+#endif
+}
+
+bool LzFile_Delete(const char* filename)
+{
+#ifdef _WIN32
+	uint16_t filenameW[LZ_MAX_PATH];
+
+	LzUnicode_UTF8toUTF16((uint8_t*) filename, -1, filenameW, sizeof(filenameW) / 2);
+
+	return DeleteFileW(filenameW) ? true : false;
+#else
+	int status;
+	status = unlink(lpFileName);
+	return (status != -1) ? true : false;
+#endif
+}
+
+int LzMkDir(const char* path, int mode)
+{
+	int status;
+
+#ifdef _WIN32
+	uint16_t pathW[LZ_MAX_PATH];
+
+	LzUnicode_UTF8toUTF16((uint8_t*) path, -1, pathW, sizeof(pathW) / 2);
+
+	status = CreateDirectoryW(pathW, NULL) ? 0 : -1;
+#else
+	if (!mode)
+		mode = S_IRUSR | S_IWUSR | S_IXUSR;
+
+	status = mkdir(path, mode);
+#endif
+
+	return status;
+}
+
+int LzRmDir(const char* path)
+{
+	int status;
+
+#ifdef _WIN32
+	uint16_t pathW[LZ_MAX_PATH];
+
+	LzUnicode_UTF8toUTF16((uint8_t*) path, -1, pathW, sizeof(pathW) / 2);
+
+	status = RemoveDirectoryW(pathW) ? 0 : -1;
+#else
+	status = rmdir(path);
+#endif
+
+	return status;
+}
+
+int LzChMod(const char* filename, int mode)
+{
+#ifdef _WIN32
+	int status;
+	uint16_t filenameW[LZ_MAX_PATH];
+
+	LzUnicode_UTF8toUTF16((uint8_t*) filename, -1, filenameW, sizeof(filenameW) / 2);
+
+	status = _wchmod(filenameW, mode);
+
+	return status;
+#else
+	mode_t fl = 0;
+
+	fl |= (mode & 0x4000) ? S_ISUID : 0;
+	fl |= (mode & 0x2000) ? S_ISGID : 0;
+	fl |= (mode & 0x1000) ? S_ISVTX : 0;
+	fl |= (mode & 0x0400) ? S_IRUSR : 0;
+	fl |= (mode & 0x0200) ? S_IWUSR : 0;
+	fl |= (mode & 0x0100) ? S_IXUSR : 0;
+	fl |= (mode & 0x0040) ? S_IRGRP : 0;
+	fl |= (mode & 0x0020) ? S_IWGRP : 0;
+	fl |= (mode & 0x0010) ? S_IXGRP : 0;
+	fl |= (mode & 0x0004) ? S_IROTH : 0;
+	fl |= (mode & 0x0002) ? S_IWOTH : 0;
+	fl |= (mode & 0x0001) ? S_IXOTH : 0;
+
+	return chmod(filename, fl);
+#endif
 }

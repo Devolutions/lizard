@@ -106,8 +106,7 @@ set(LIZARD_HEADERS
 set(LIZARD_SOURCES
 	LzArchive.c
 	LzFile.c
-	LzUnicode.c
-	LzMain.c)
+	LzUnicode.c)
 
 add_library(lizard STATIC
 	${LIZARD_SOURCES} ${LIZARD_HEADERS}

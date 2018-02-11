@@ -62,7 +62,7 @@ int LzArchive_OpenData(LzArchive* ctx, const uint8_t* data, size_t size)
 	return SZ_OK;
 }
 
-int LzArchive_NumFiles(LzArchive* ctx)
+int LzArchive_Count(LzArchive* ctx)
 {
 	return (int) ctx->db.NumFiles;
 }
@@ -106,33 +106,78 @@ int LzArchive_GetFileName(LzArchive* ctx, int index, char* filename, int cch)
 	return status;
 }
 
-int LzArchive_Extract(LzArchive* ctx, int index, const char* filename)
+int LzArchive_Find(LzArchive* ctx, const char* filename)
 {
-	SRes res;
+	int index;
+	int count;
+	int status;
+	bool found = false;
+	char current[LZ_MAX_PATH];
+
+	count = LzArchive_Count(ctx);
+
+	for (index = 0; index < count; index++)
+	{
+		LzArchive_GetFileName(ctx, index, current, sizeof(current));
+
+		if (!strcmp(current, filename))
+		{
+			found = true;
+			break;
+		}
+	}
+
+	status = found ? index : -1;
+
+	printf("find: %d:%s", status, filename);
+
+	return status;
+}
+
+int LzArchive_ExtractData(LzArchive* ctx, int index, const char* filename, uint8_t** outputData, size_t* outputSize)
+{
+	int status;
 	size_t offset = 0;
-	size_t outputSize = 0;
-	uint8_t* outputData = NULL;
 	size_t processedSize = 0;
 	uint32_t blockIndex = 0xFFFFFFFF;
-	uint8_t* extractedData = NULL;
-	size_t extractedSize = 0;
 	const CSzArEx* db = &ctx->db;
 
-	if (index >= (int) db->NumFiles)
+	if (index < 0)
+		index = LzArchive_Find(ctx, filename);
+
+	if ((index < 0) || (index >= (int) db->NumFiles))
 		return -1;
 
 	if (SzArEx_IsDir(db, index))
 		return -1;
 
-	res = SzArEx_Extract(db, &ctx->dataStream.s, index, &blockIndex,
-		&outputData, &outputSize, &offset, &processedSize, &ctx->allocator, &ctx->allocator);
+	status = SzArEx_Extract(db, &ctx->dataStream.s, index, &blockIndex,
+		outputData, outputSize, &offset, &processedSize, &ctx->allocator, &ctx->allocator);
 
-	extractedData = &outputData[offset];
-	extractedSize = processedSize;
+	*outputData += offset;
+	*outputSize = processedSize;
 
-	LzFile_Save(filename, extractedData, extractedSize, 0);
+	return status;
+}
 
-	return res;
+int LzArchive_ExtractFile(LzArchive* ctx, int index, const char* inputName, const char* outputName)
+{
+	int status;
+	size_t outputSize = 0;
+	uint8_t* outputData = NULL;
+	const CSzArEx* db = &ctx->db;
+
+	if (index < 0)
+		index = LzArchive_Find(ctx, inputName);
+
+	if (!outputName)
+		outputName = inputName;
+
+	status = LzArchive_ExtractData(ctx, index, inputName, &outputData, &outputSize);
+
+	LzFile_Save(outputName, outputData, outputSize, 0);
+
+	return status;
 }
 
 int LzArchive_Close(LzArchive* ctx)
