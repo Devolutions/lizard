@@ -95,8 +95,6 @@ int LzEnv_GetCwd(char* path, int cch)
 #ifdef _WIN32
 	uint16_t pathW[LZ_MAX_PATH];
 
-	LzUnicode_UTF8toUTF16((uint8_t*) path, -1, pathW, sizeof(pathW) / 2);
-
 	if (!GetCurrentDirectoryW(sizeof(pathW) / 2, pathW))
 		return -1;
 
@@ -149,4 +147,25 @@ bool LzEnv_SetCwd(const char* path)
 	status = chdir(path);
 	return (status == 0) ? true : false;
 #endif
+}
+
+int LzEnv_GetTempPath(char* path, int cch)
+{
+	int status;
+
+#ifdef _WIN32
+	uint16_t pathW[LZ_MAX_PATH];
+
+	if (!GetTempPathW(sizeof(pathW) / 2, pathW))
+		return -1;
+
+	if (LzUnicode_UTF16toUTF8(pathW, -1, (uint8_t*) path, cch) < 1)
+		return -1;
+
+	status = strlen(path);
+#else
+	status = LzEnv_GetEnv("TEMP", path, cch);
+#endif
+
+	return status;
 }

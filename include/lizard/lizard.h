@@ -27,8 +27,33 @@ typedef struct lz_archive LzArchive;
 #define LZ_ERROR_NO_ARCHIVE	-17
 #define LZ_ERROR_FILE		-30
 #define LZ_ERROR_NOT_FOUND	-31
+#define LZ_ERROR_UNEXPECTED	-32
 
 #define LZ_MAX_PATH		1024
+
+#ifdef _WIN32
+#define lz_snprintf		sprintf_s
+#else
+#define lz_snprintf		snprintf
+#endif
+
+#define LZ_PATH_SLASH_CHR		'/'
+#define LZ_PATH_SLASH_STR		"/"
+
+#define LZ_PATH_BACKSLASH_CHR		'\\'
+#define LZ_PATH_BACKSLASH_STR		"\\"
+
+#ifdef _WIN32
+#define LZ_PATH_SEPARATOR_CHR		LZ_PATH_BACKSLASH_CHR
+#define LZ_PATH_SEPARATOR_STR		LZ_PATH_BACKSLASH_STR
+#else
+#define LZ_PATH_SEPARATOR_CHR		LZ_PATH_SLASH_CHR
+#define LZ_PATH_SEPARATOR_STR		LZ_PATH_SLASH_STR
+#endif
+
+#define LZ_PATH_STYLE_NATIVE		0
+#define LZ_PATH_STYLE_WINDOWS		1
+#define LZ_PATH_STYLE_UNIX		2
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +71,7 @@ bool LzFile_Save(const char* filename, uint8_t* data, size_t size, int mode);
 bool LzFile_Move(const char* src, const char* dst, bool replace);
 bool LzFile_Exists(const char* filename);
 bool LzFile_Delete(const char* filename);
+int LzMkPath(const char* path, int mode);
 int LzMkDir(const char* path, int mode);
 int LzRmDir(const char* path);
 int LzChMod(const char* filename, int mode);
@@ -53,6 +79,10 @@ int LzChMod(const char* filename, int mode);
 int LzEnv_GetEnv(const char* name, char* value, int cch);
 int LzEnv_GetCwd(char* path, int cch);
 bool LzEnv_SetCwd(const char* path);
+int LzEnv_GetTempPath(char* path, int cch);
+
+int LzPathCchAppend(char* path, int cchPath, const char* more);
+int LzPathCchConvert(char* path, size_t cch, int style);
 
 int LzUnicode_UTF8toUTF16(const uint8_t* src, int cchSrc, uint16_t* dst, int cchDst);
 int LzUnicode_UTF16toUTF8(const uint16_t* src, int cchSrc, uint8_t* dst, int cchDst);

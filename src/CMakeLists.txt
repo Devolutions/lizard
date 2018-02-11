@@ -107,6 +107,7 @@ set(LIZARD_SOURCES
 	LzArchive.c
 	LzEnv.c
 	LzFile.c
+	LzPath.c
 	LzUnicode.c)
 
 add_library(lizard STATIC

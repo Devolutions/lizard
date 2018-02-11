@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 	char* arg;
 	LzArchive* archive;
 	char filename[LZ_MAX_PATH];
-	char fullname[LZ_MAX_PATH];
+	char fullpath[LZ_MAX_PATH];
 
 	if (argc < 2)
 	{
@@ -109,7 +109,7 @@ int main(int argc, char** argv)
 	{
 		if (strlen(lizard_output) > 0)
 		{
-			LzMkDir(lizard_output, 0);
+			LzMkPath(lizard_output, 0);
 		}
 	}
 
@@ -124,7 +124,11 @@ int main(int argc, char** argv)
 
 		if (lizard_extract)
 		{
-			LzArchive_ExtractFile(archive, index, filename, filename);
+			fullpath[0] = '\0';
+			LzPathCchAppend(fullpath, sizeof(fullpath), lizard_output);
+			LzPathCchAppend(fullpath, sizeof(fullpath), filename);
+
+			LzArchive_ExtractFile(archive, index, filename, fullpath);
 		}
 	}
 

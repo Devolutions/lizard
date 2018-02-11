@@ -284,6 +284,30 @@ bool LzFile_Delete(const char* filename)
 #endif
 }
 
+int LzMkPath(const char* path, int mode)
+{
+	int status = 0;
+	bool done = false;
+	char* sep = (char*) path;
+
+	while (!done)
+	{
+		sep += strspn(sep, "/");
+		sep += strcspn(sep, "/");
+
+		done = (*sep == '\0');
+
+		*sep = '\0';
+		status = LzMkDir(path, mode);
+		*sep = '/';
+
+		if (status != 0)
+			break;
+	}
+
+	return status;
+}
+
 int LzMkDir(const char* path, int mode)
 {
 	int status;
