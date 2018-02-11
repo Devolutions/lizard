@@ -12,6 +12,12 @@
 #include "7zCrc.h"
 #include "7zFile.h"
 #include "7zVersion.h"
+#include "7zMemInStream.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#include <strsafe.h>
+#endif
 
 #ifndef USE_WINDOWS_FILE
 /* for mkdir */
@@ -23,17 +29,14 @@
 #endif
 #endif
 
-
 #define kInputBufSize ((size_t)1 << 18)
 
 static const ISzAlloc g_Alloc = { SzAlloc, SzFree };
-
 
 static void Print(const char *s)
 {
 	fputs(s, stdout);
 }
-
 
 static int Buf_EnsureSize(CBuf *dest, size_t size)
 {
@@ -199,11 +202,8 @@ static SRes Utf16_To_Char(CBuf *buf, const UInt16 *s
 static WRes MyCreateDir(const UInt16 *name)
 {
 #ifdef USE_WINDOWS_FILE
-
 	return CreateDirectoryW(name, NULL) ? 0 : GetLastError();
-
 #else
-
 	CBuf buf;
 	WRes res;
 	Buf_Init(&buf);
@@ -236,7 +236,6 @@ static WRes OutFile_OpenUtf16(CSzFile *p, const UInt16 *name)
 	return res;
 #endif
 }
-
 
 static SRes PrintString(const UInt16 *s)
 {
@@ -356,11 +355,11 @@ static void GetAttribString(UInt32 wa, Bool isDir, char *s)
 {
 #ifdef USE_WINDOWS_FILE
 	s[0] = (char)(((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || isDir) ? 'D' : '.');
-  s[1] = (char)(((wa & FILE_ATTRIBUTE_READONLY ) != 0) ? 'R': '.');
-  s[2] = (char)(((wa & FILE_ATTRIBUTE_HIDDEN   ) != 0) ? 'H': '.');
-  s[3] = (char)(((wa & FILE_ATTRIBUTE_SYSTEM   ) != 0) ? 'S': '.');
-  s[4] = (char)(((wa & FILE_ATTRIBUTE_ARCHIVE  ) != 0) ? 'A': '.');
-  s[5] = 0;
+	s[1] = (char)(((wa & FILE_ATTRIBUTE_READONLY ) != 0) ? 'R': '.');
+	s[2] = (char)(((wa & FILE_ATTRIBUTE_HIDDEN   ) != 0) ? 'H': '.');
+	s[3] = (char)(((wa & FILE_ATTRIBUTE_SYSTEM   ) != 0) ? 'S': '.');
+	s[4] = (char)(((wa & FILE_ATTRIBUTE_ARCHIVE  ) != 0) ? 'A': '.');
+	s[5] = 0;
 #else
 	s[0] = (char)(((wa & (1 << 4)) != 0 || isDir) ? 'D' : '.');
 	s[1] = 0;
@@ -399,19 +398,14 @@ int lizard_main(int argc, char** args)
 		return 1;
 	}
 
-#if defined(_WIN32) && !defined(USE_WINDOWS_FILE) && !defined(UNDER_CE)
+#if defined(_WIN32) && !defined(USE_WINDOWS_FILE)
 	g_FileCodePage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
 #endif
-
 
 	allocImp = g_Alloc;
 	allocTempImp = g_Alloc;
 
-#ifdef UNDER_CE
-	if (InFile_OpenW(&archiveStream.file, L"\test.7z"))
-#else
 	if (InFile_Open(&archiveStream.file, args[2]))
-#endif
 	{
 		PrintError("can not open input file");
 		return 1;
@@ -475,13 +469,11 @@ int lizard_main(int argc, char** args)
 			{
 				size_t offset = 0;
 				size_t outSizeProcessed = 0;
-				// const CSzFileItem *f = db.Files + i;
 				size_t len;
 				unsigned isDir = SzArEx_IsDir(&db, i);
 				if (listCommand == 0 && isDir && !fullPaths)
 					continue;
 				len = SzArEx_GetFileNameUtf16(&db, i, NULL);
-				// len = SzArEx_GetFullNameLen(&db, i);
 
 				if (len > tempSize)
 				{
@@ -496,13 +488,6 @@ int lizard_main(int argc, char** args)
 				}
 
 				SzArEx_GetFileNameUtf16(&db, i, temp);
-				/*
-				if (SzArEx_GetFullNameUtf16_Back(&db, i, temp + len) != temp)
-				{
-				  res = SZ_ERROR_FAIL;
-				  break;
-				}
-				*/
 
 				if (listCommand)
 				{
@@ -610,14 +595,14 @@ int lizard_main(int argc, char** args)
 
 #ifdef USE_WINDOWS_FILE
 					if (SzBitWithVals_Check(&db.Attribs, i))
-          {
-            UInt32 attrib = db.Attribs.Vals[i];
-            /* p7zip stores posix attributes in high 16 bits and adds 0x8000 as marker.
-               We remove posix bits, if we detect posix mode field */
-            if ((attrib & 0xF0000000) != 0)
-              attrib &= 0x7FFF;
-            SetFileAttributesW(destPath, attrib);
-          }
+					{
+					    UInt32 attrib = db.Attribs.Vals[i];
+					    /* p7zip stores posix attributes in high 16 bits and adds 0x8000 as marker.
+					       We remove posix bits, if we detect posix mode field */
+					    if ((attrib & 0xF0000000) != 0)
+					      attrib &= 0x7FFF;
+					    SetFileAttributesW(destPath, attrib);
+					}
 #endif
 				}
 				PrintLF();
@@ -634,7 +619,7 @@ int lizard_main(int argc, char** args)
 
 	if (res == SZ_OK)
 	{
-		Print("\nEverything is Ok\n");
+		Print("\nEverything is OK\n");
 		return 0;
 	}
 
@@ -654,210 +639,7 @@ int lizard_main(int argc, char** args)
 	return 1;
 }
 
-#if 0
-
-#include <windows.h>
-#include <strsafe.h>
-
-#include <7z.h>
-#include <7zAlloc.h>
-#include <7zBuf.h>
-#include <7zCrc.h>
-#include <7zFile.h>
-#include <7zMemInStream.h>
-
-#include <lizard/lizard.h>
-
-static ISzAlloc g_Alloc = {SzAlloc, SzFree};
-
-static int Buf_EnsureSize(CBuf* dest, size_t size)
-{
-	if (dest->size >= size)
-		return 1;
-	Buf_Free(dest, &g_Alloc);
-	
-	return Buf_Create(dest, size, &g_Alloc);
-}
-
-static SRes Utf16_To_Char(CBuf* buf, const UInt16* s, UINT codePage)
-{
-	unsigned len = 0;
-	
-	for (len = 0; s[len] != 0; len++);
-	
-	unsigned size = len * 3 + 100;
-		
-	if (!Buf_EnsureSize(buf, size))
-		return SZ_ERROR_MEM;
-		
-	buf->data[0] = 0;
-			
-	if (len != 0)
-	{
-		char defaultChar = '_';
-		BOOL defUsed;
-		unsigned numChars = 0;
-			
-		numChars = WideCharToMultiByte(codePage, 0, s, len, (char*) buf->data, size, &defaultChar,
-			&defUsed);
-				
-		if (numChars == 0 || numChars >= size)
-			return SZ_ERROR_FAIL;
-			
-		buf->data[numChars] = 0;
-	}
-
-	return SZ_OK;
-}
-
-static SRes PrintString(const UInt16* s)
-{
-	CBuf buf;
-	SRes res;
-	Buf_Init(&buf);
-	res = Utf16_To_Char(&buf, s, CP_OEMCP);
-	
-	if (res == SZ_OK)
-		fputs((const char*) buf.data, stdout);
-	
-	Buf_Free(&buf, &g_Alloc);
-	return res;
-}
-
-static WRes MyCreateDir(const UInt16* name)
-{
-	return CreateDirectoryW(name, NULL) ? 0 : GetLastError();
-}
-
-static void UInt64ToStr(UInt64 value, char* s)
-{
-	char temp[32];
-	int pos = 0;
-	
-	do
-	{
-		temp[pos++] = (char) ('0' + (unsigned) (value % 10));
-		value /= 10;
-	}
-	while (value != 0);
-	
-	do
-		*s++ = temp[--pos];
-	while (pos);
-	
-	*s = '\0';
-}
-
-static char* UIntToStr(char* s, unsigned value, int numDigits)
-{
-	char temp[16];
-	int pos = 0;
-	
-	do
-		temp[pos++] = (char) ('0' + (value % 10));
-	while (value /= 10);
-	
-	for (numDigits -= pos; numDigits > 0; numDigits--)
-		*s++ = '0';
-	
-	do
-		*s++ = temp[--pos];
-	while (pos);
-	
-	*s = '\0';
-	
-	return s;
-}
-
-static void UIntToStr_2(char* s, unsigned value)
-{
-	s[0] = (char) ('0' + (value / 10));
-	s[1] = (char) ('0' + (value % 10));
-}
-
-#define PERIOD_4 (4 * 365 + 1)
-#define PERIOD_100 (PERIOD_4 * 25 - 1)
-#define PERIOD_400 (PERIOD_100 * 4 + 1)
-
-static void ConvertFileTimeToString(const CNtfsFileTime* nt, char* s)
-{
-	unsigned year, mon, hour, min, sec;
-	Byte ms[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-	unsigned t;
-	UInt32 v;
-	UInt64 v64 = nt->Low | ((UInt64) nt->High << 32);
-	v64 /= 10000000;
-	sec = (unsigned) (v64 % 60);
-	v64 /= 60;
-	min = (unsigned) (v64 % 60);
-	v64 /= 60;
-	hour = (unsigned) (v64 % 24);
-	v64 /= 24;
-
-	v = (UInt32) v64;
-
-	year = (unsigned) (1601 + v / PERIOD_400 * 400);
-	v %= PERIOD_400;
-
-	t = v / PERIOD_100;
-	if (t == 4)
-		t = 3;
-	year += t * 100;
-	v -= t * PERIOD_100;
-	t = v / PERIOD_4;
-	if (t == 25)
-		t = 24;
-	year += t * 4;
-	v -= t * PERIOD_4;
-	t = v / 365;
-	if (t == 4)
-		t = 3;
-	year += t;
-	v -= t * 365;
-
-	if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0))
-		ms[1] = 29;
-	for (mon = 0;; mon++)
-	{
-		unsigned d = ms[mon];
-		if (v < d)
-			break;
-		v -= d;
-	}
-	s = UIntToStr(s, year, 4);
-	*s++ = '-';
-	UIntToStr_2(s, mon + 1);
-	s[2] = '-';
-	s += 3;
-	UIntToStr_2(s, (unsigned) v + 1);
-	s[2] = ' ';
-	s += 3;
-	UIntToStr_2(s, hour);
-	s[2] = ':';
-	s += 3;
-	UIntToStr_2(s, min);
-	s[2] = ':';
-	s += 3;
-	UIntToStr_2(s, sec);
-	s[2] = 0;
-}
-
-void PrintError(char* sz)
-{
-	printf("\nERROR: %s\n", sz);
-}
-
-static void GetAttribString(UInt32 wa, Bool isDir, char* s)
-{
-	s[0] = (char) (((wa & FILE_ATTRIBUTE_DIRECTORY) != 0 || isDir) ? 'D' : '.');
-	s[1] = (char) (((wa & FILE_ATTRIBUTE_READONLY) != 0) ? 'R' : '.');
-	s[2] = (char) (((wa & FILE_ATTRIBUTE_HIDDEN) != 0) ? 'H' : '.');
-	s[3] = (char) (((wa & FILE_ATTRIBUTE_SYSTEM) != 0) ? 'S' : '.');
-	s[4] = (char) (((wa & FILE_ATTRIBUTE_ARCHIVE) != 0) ? 'A' : '.');
-	s[5] = 0;
-}
-
-BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archiveData, size_t archiveSize)
+bool lizard_archive_buffer_extract_to_file(uint8_t* archiveData, size_t archiveSize, uint16_t* filename, uint16_t* outputPath)
 {
 	CSzArEx db;
 	SRes res;
@@ -866,8 +648,8 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 	UInt16* temp = NULL;
 	size_t tempSize = 0;
 	CMemInStream archiveStream;
-	BOOL fileExtracted = FALSE;
-	WCHAR destinationPath[MAX_PATH + 1];
+	bool fileExtracted = false;
+	uint16_t destinationPath[MAX_PATH + 1];
 
 	allocImp.Alloc = SzAlloc;
 	allocImp.Free = SzFree;
@@ -886,7 +668,7 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 	if (res != SZ_OK)
 	{
 		PrintError("Failed to init archive");
-		return FALSE;
+		return false;
 	}
 
 	UInt32 i;
@@ -903,7 +685,6 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 	{
 		size_t offset = 0;
 		size_t outSizeProcessed = 0;
-		// const CSzFileItem *f = db.Files + i;
 		size_t len;
 		BOOL isDir = SzArEx_IsDir(&db, i);
 		len = SzArEx_GetFileNameUtf16(&db, i, NULL);
@@ -913,6 +694,7 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 			SzFree(NULL, temp);
 			tempSize = len;
 			temp = (UInt16*) SzAlloc(NULL, tempSize * sizeof(temp[0]));
+
 			if (!temp)
 			{
 				res = SZ_ERROR_MEM;
@@ -922,7 +704,7 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 
 		SzArEx_GetFileNameUtf16(&db, i, temp);
 
-		if (wcscmp(temp, fileName) != 0)
+		if (wcscmp(temp, filename) != 0)
 			continue;
 
 		char attr[8], s[32], t[32];
@@ -931,7 +713,7 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 		GetAttribString(SzBitWithVals_Check(&db.Attribs, i) ? db.Attribs.Vals[i] : 0, isDir, attr);
 
 		fileSize = SzArEx_GetFileSize(&db, i);
-		UInt64ToStr(fileSize, s);
+		UInt64ToStr(fileSize, s, 10);
 
 		if (SzBitWithVals_Check(&db.MTime, i))
 			ConvertFileTimeToString(&db.MTime.Vals[i], t);
@@ -969,7 +751,7 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 				destPath = name + j + 1;
 		}
 
-		StringCchPrintfW(destinationPath, sizeof(destinationPath), L"%s\\%s", destinationFolder, fileName);
+		StringCchPrintfW(destinationPath, sizeof(destinationPath), L"%s\\%s", outputPath, filename);
 
 		if (OutFile_OpenW(&outFile, destinationPath))
 		{
@@ -997,7 +779,7 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 		if (SzBitWithVals_Check(&db.Attribs, i))
 			SetFileAttributesW(destPath, db.Attribs.Vals[i]);
 
-		fileExtracted = TRUE;
+		fileExtracted = true;
 
 		printf("\n");
 	}
@@ -1008,7 +790,7 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 
 	if (res == SZ_OK)
 	{
-		printf("\nEverything is Ok\n");
+		printf("\nEverything is OK\n");
 		return fileExtracted;
 	}
 
@@ -1023,5 +805,3 @@ BOOL ExtractFromArchive(WCHAR* fileName, WCHAR* destinationFolder, BYTE* archive
 
 	return fileExtracted;
 }
-
-#endif

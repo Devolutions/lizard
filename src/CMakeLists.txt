@@ -42,8 +42,7 @@ set(LZMA_HEADERS
 	${LZMA_DIR}/Sort.h
 	${LZMA_DIR}/Xz.h
 	${LZMA_DIR}/XzCrc64.h
-	${LZMA_DIR}/XzEnc.h
-	)
+	${LZMA_DIR}/XzEnc.h)
 
 set(LZMA_SOURCES
 	${LZMA_DIR}/7zAlloc.c
@@ -84,8 +83,7 @@ set(LZMA_SOURCES
 	${LZMA_DIR}/XzCrc64Opt.c
 	${LZMA_DIR}/XzDec.c
 	${LZMA_DIR}/XzEnc.c
-	${LZMA_DIR}/XzIn.c
-	)
+	${LZMA_DIR}/XzIn.c)
 
 if(WIN32)
 	list(APPEND LZMA_HEADERS ${LZMA_DIR}/DllSecur.h)
@@ -102,6 +100,15 @@ if(LZMA_THREADS)
 	list(APPEND LZMA_SOURCES ${LZMA_DIR}/Threads.c)
 endif()
 
+set(LIZARD_HEADERS
+	LzUnicode.h)
+
+set(LIZARD_SOURCES
+	LzArchive.c
+	LzFile.c
+	LzUnicode.c
+	LzMain.c)
+
 add_library(lizard STATIC
-	${LZMA_SOURCES} ${LZMA_HEADERS}
-	lizard.c)
+	${LIZARD_SOURCES} ${LIZARD_HEADERS}
+	${LZMA_SOURCES} ${LZMA_HEADERS})
