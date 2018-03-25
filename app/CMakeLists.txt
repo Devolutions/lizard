@@ -1,7 +1,11 @@
 
-set(LZMA_DIR "${CMAKE_SOURCE_DIR}/src/lzma")
+if(NOT LIZARD_VERSION)
+	cmake_minimum_required(VERSION 3.0)
 
-include_directories(${LZMA_DIR})
+	project(lizard-app C)
+
+	find_package(lizard CONFIG REQUIRED)
+endif()
 
 set(${MODULE_PREFIX}_SOURCES
 	lizard.c)

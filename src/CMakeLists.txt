@@ -113,3 +113,20 @@ set(LIZARD_SOURCES
 add_library(lizard STATIC
 	${LIZARD_SOURCES} ${LIZARD_HEADERS}
 	${LZMA_SOURCES} ${LZMA_HEADERS})
+
+if(LIZARD_INSTALL)
+	target_include_directories(lizard
+		INTERFACE $<INSTALL_INTERFACE:include>)
+
+	install(TARGETS lizard
+		EXPORT lizard-target
+		ARCHIVE DESTINATION lib
+		LIBRARY DESTINATION lib)
+
+	export(TARGETS lizard
+		APPEND FILE ${PROJECT_BINARY_DIR}/lizard-target.cmake)
+
+	install(EXPORT lizard-target
+	        FILE lizard-target.cmake
+	        DESTINATION "${CMAKE_EXPORT_DIR}")
+endif()
