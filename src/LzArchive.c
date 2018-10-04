@@ -176,6 +176,7 @@ int LzArchive_Find(LzArchive* ctx, const char* filename)
 int LzArchive_ExtractData(LzArchive* ctx, int index, const char* filename, uint8_t** outputData, size_t* outputSize)
 {
 	int status;
+	uint8_t* buffer = NULL;
 	size_t offset = 0;
 	size_t processedSize = 0;
 	uint32_t blockIndex = 0xFFFFFFFF;
@@ -197,10 +198,30 @@ int LzArchive_ExtractData(LzArchive* ctx, int index, const char* filename, uint8
 		return LZ_ERROR_PARAM;
 
 	status = LzMapRes(SzArEx_Extract(db, &ctx->dataStream.s, index, &blockIndex,
-		outputData, outputSize, &offset, &processedSize, &ctx->allocator, &ctx->allocator));
+		&buffer, outputSize, &offset, &processedSize, &ctx->allocator, &ctx->allocator));
 
-	*outputData += offset;
-	*outputSize = processedSize;
+	if (offset == 0)
+	{
+		*outputData = buffer;
+		*outputSize = processedSize;
+	}
+	else
+	{
+		*outputData = (uint8_t*) calloc(processedSize, sizeof(uint8_t));
+
+		if (!outputData)
+		{
+			status = LZ_ERROR_MEM;
+			goto exit;
+		}
+
+		memcpy(*outputData, buffer + offset, processedSize);
+		free(buffer);
+	}
+
+exit:
+	if (status != LZ_OK)
+		free(buffer);
 
 	return status;
 }
