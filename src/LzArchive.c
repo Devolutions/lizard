@@ -200,10 +200,11 @@ int LzArchive_ExtractData(LzArchive* ctx, int index, const char* filename, uint8
 	status = LzMapRes(SzArEx_Extract(db, &ctx->dataStream.s, index, &blockIndex,
 		&buffer, outputSize, &offset, &processedSize, &ctx->allocator, &ctx->allocator));
 
+	*outputSize = processedSize;
+
 	if (offset == 0)
 	{
 		*outputData = buffer;
-		*outputSize = processedSize;
 	}
 	else
 	{
