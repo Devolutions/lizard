@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(lizard C)
+project(lizard C CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -43,9 +43,34 @@ set(CMAKE_EXPORT_DIR "lib/cmake/lizard")
 
 include_directories(include)
 
+SET(BUILD_APP ON)
+
+if(LIZARD_FUZZING)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=fuzzer")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer")
+	set(LIZARD_ASAN ON)
+	set(BUILD_APP OFF)
+	add_definitions(-DLIZARD_FUZZING)
+endif()
+
+if(LIZARD_ASAN)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+endif()
+
+set(CMAKE_EXPORT_DIR "lib/cmake/lizard")
+
 add_subdirectory(src)
 
-add_subdirectory(app)
+if(BUILD_APP)
+	add_subdirectory(app)
+endif()
+
+if(LIZARD_FUZZING)
+	add_subdirectory(fuzzing)
+endif()
 
 # installation
 
