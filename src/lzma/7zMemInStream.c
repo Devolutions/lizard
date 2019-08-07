@@ -64,9 +64,21 @@ static SRes MemInStream_Seek(const ILookInStream *pp, Int64 *pos, ESzSeek origin
   CMemInStream *p = (CMemInStream *)pp;
   switch (origin)
   {
-    case SZ_SEEK_SET: p->pos = p->begin + *pos; break;
-    case SZ_SEEK_CUR: p->pos += *pos; break;
-    case SZ_SEEK_END: p->pos = p->end + *pos; break;
+    case SZ_SEEK_SET: 
+      if (p->begin + *pos > p->end)
+        return SZ_ERROR_FAIL;
+      p->pos = p->begin + *pos;
+      break;
+    case SZ_SEEK_CUR:
+      if (p->pos + *pos > p->end)
+        return SZ_ERROR_FAIL;  
+      p->pos += *pos;
+      break;
+    case SZ_SEEK_END: 
+      if (p->end + *pos > p->end)
+        return SZ_ERROR_FAIL;
+      p->pos = p->end + *pos;
+      break;
     default: return 1;
   }
 

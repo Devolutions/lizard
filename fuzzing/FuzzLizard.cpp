@@ -1,3 +1,8 @@
+/*
+ * Recommended command-line:
+ *  ASAN_OPTIONS="allocator_may_return_null=1" ./fuzzing/FuzzLizard -detect_leaks=0 corpus/
+ */
+
 #include <stddef.h>
 #include <stdint.h>
 #include <assert.h>
