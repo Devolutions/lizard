@@ -130,7 +130,7 @@ static const uint8_t firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0x
 
 /* --------------------------------------------------------------------- */
 
-ConversionResult ConvertUTF16toUTF8(
+static ConversionResult LzConvert_UTF16toUTF8(
 	const uint16_t** sourceStart, const uint16_t* sourceEnd,
 	uint8_t** targetStart, uint8_t* targetEnd, ConversionFlags flags)
 {
@@ -352,7 +352,7 @@ static bool isLegalUTF8(const uint8_t* source, int length)
 * Exported function to return whether a UTF-8 sequence is legal or not.
 * This is not used here; it's just exported.
 */
-bool isLegalUTF8Sequence(const uint8_t* source, const uint8_t* sourceEnd)
+static bool isLegalUTF8Sequence(const uint8_t* source, const uint8_t* sourceEnd)
 {
 	int length = trailingBytesForUTF8[*source] + 1;
 
@@ -364,7 +364,7 @@ bool isLegalUTF8Sequence(const uint8_t* source, const uint8_t* sourceEnd)
 
 /* --------------------------------------------------------------------- */
 
-ConversionResult ConvertUTF8toUTF16(
+static ConversionResult LzConvert_UTF8toUTF16(
 	const uint8_t** sourceStart, const uint8_t* sourceEnd,
 	uint16_t** targetStart, uint16_t* targetEnd, ConversionFlags flags)
 {
@@ -511,7 +511,7 @@ ConversionResult ConvertUTF8toUTF16(
  * Lizard Unicode API
  */
 
-size_t lz_wcslen(const uint16_t* str)
+static size_t lz_wcslen(const uint16_t* str)
 {
 	uint16_t* p = (uint16_t*) str;
 
@@ -541,7 +541,7 @@ int LzUnicode_UTF8toUTF16(const uint8_t* src, int cchSrc, uint16_t* dst, int cch
 
 	if (cchDst == 0)
 	{
-		result = ConvertUTF8toUTF16(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+		result = LzConvert_UTF8toUTF16(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
 
 		length = dstBeg - ((uint16_t*) NULL);
 	}
@@ -550,7 +550,7 @@ int LzUnicode_UTF8toUTF16(const uint8_t* src, int cchSrc, uint16_t* dst, int cch
 		dstBeg = dst;
 		dstEnd = &dst[cchDst];
 
-		result = ConvertUTF8toUTF16(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+		result = LzConvert_UTF8toUTF16(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
 
 		length = dstBeg - dst;
 	}
@@ -575,7 +575,7 @@ int LzUnicode_UTF16toUTF8(const uint16_t* src, int cchSrc, uint8_t* dst, int cch
 
 	if (cchDst == 0)
 	{
-		result = ConvertUTF16toUTF8(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+		result = LzConvert_UTF16toUTF8(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
 
 		length = dstBeg - ((uint8_t*) NULL);
 	}
@@ -584,7 +584,7 @@ int LzUnicode_UTF16toUTF8(const uint16_t* src, int cchSrc, uint8_t* dst, int cch
 		dstBeg = dst;
 		dstEnd = &dst[cchDst];
 
-		result = ConvertUTF16toUTF8(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
+		result = LzConvert_UTF16toUTF8(&srcBeg, srcEnd, &dstBeg, dstEnd, strictConversion);
 
 		length = dstBeg - dst;
 	}
