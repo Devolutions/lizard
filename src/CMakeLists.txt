@@ -110,6 +110,10 @@ set(LIZARD_SOURCES
 	LzPath.c
 	LzUnicode.c)
 
+if(WIN32)
+	list(APPEND LIZARD_SOURCES LzWindows.c)
+endif()
+
 add_library(lizard STATIC
 	${LIZARD_SOURCES} ${LIZARD_HEADERS}
 	${LZMA_SOURCES} ${LZMA_HEADERS})
