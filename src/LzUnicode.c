@@ -591,3 +591,47 @@ int LzUnicode_UTF16toUTF8(const uint16_t* src, int cchSrc, uint8_t* dst, int cch
 
 	return (result == conversionOK) ? length : 0;
 }
+
+char* LzUnicode_UTF16toUTF8_dup(const uint16_t* src)
+{
+	int len;
+	char* dst;
+
+	len = LzUnicode_UTF16toUTF8(src, -1, NULL, 0);
+
+	if (len < 1)
+		return NULL;
+
+	dst = malloc(len + 1);
+
+	if (!dst)
+		return NULL;
+
+	len = LzUnicode_UTF16toUTF8(src, -1, dst, len);
+
+	dst[len] = 0;
+
+	return dst;
+}
+
+uint16_t* LzUnicode_UTF8toUTF16_dup(const char* src)
+{
+	int len;
+	uint16_t* dst;
+
+	len = LzUnicode_UTF8toUTF16((const uint8_t*) src, -1, NULL, 0);
+
+	if (len < 1)
+		return NULL;
+
+	dst = malloc((len + 1) * 2);
+
+	if (!dst)
+		return NULL;
+
+	len = LzUnicode_UTF8toUTF16((const uint8_t*) src, -1, dst, len);
+
+	dst[len] = 0;
+
+	return dst;
+}
