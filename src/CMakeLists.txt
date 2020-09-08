@@ -108,7 +108,8 @@ set(LIZARD_SOURCES
 	LzEnv.c
 	LzFile.c
 	LzPath.c
-	LzUnicode.c)
+	LzUnicode.c
+	LzJson.c)
 
 if(WIN32)
 	list(APPEND LIZARD_SOURCES LzWindows.c)

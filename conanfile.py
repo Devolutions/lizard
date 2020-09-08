@@ -2,7 +2,7 @@ from conans import ConanFile, CMake, tools
 
 class lizardConan(ConanFile):
     name = "lizard"
-    version = "1.1.0"
+    version = "1.2.0"
     license = "Devolutions"
     author = "Devolutions CI ci@devolutions.net"
     url = "https://github.com/devolutions/lizard"
