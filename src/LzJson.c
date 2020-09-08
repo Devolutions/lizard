@@ -699,12 +699,16 @@ static JSON_Value * parse_boolean_value(const char **string) {
 }
 
 static JSON_Value * parse_number_value(const char **string) {
-    char* end_ptr = NULL;
-    double number = strtod(*string, &end_ptr);
-    int32_t len = end_ptr - *string;
-
     JSON_Value* output_value = NULL;
-    if (len > 0) {
+    char* end_ptr = NULL;
+    double number = 0;
+    int32_t len = 0;
+
+    errno = 0;
+    number = strtod(*string, &end_ptr);
+    len = end_ptr - *string;
+
+    if (len > 0 && !errno) {
         if (is_decimal(*string, (size_t) len)) {
             *string += len;
             output_value = lz_json_value_init_number(number);
