@@ -607,7 +607,7 @@ char* LzUnicode_UTF16toUTF8_dup(const uint16_t* src)
 	if (!dst)
 		return NULL;
 
-	len = LzUnicode_UTF16toUTF8(src, -1, dst, len);
+	len = LzUnicode_UTF16toUTF8(src, -1, (uint8_t*) dst, len);
 
 	dst[len] = 0;
 

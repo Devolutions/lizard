@@ -27,6 +27,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdint.h>
+#include <errno.h>
 
 #include <lizard/lizard.h>
 #include <lizard/LzJson.h>
@@ -43,6 +44,14 @@
 #define SIZEOF_TOKEN(a)       (sizeof(a) - 1)
 #define SKIP_CHAR(str)        ((*str)++)
 #define SKIP_WHITESPACES(str) while (isspace(**str)) { SKIP_CHAR(str); }
+
+#ifndef min
+#define min(_a, _b)     ((_a < _b) ? _a : _b)
+#endif
+
+#ifndef max
+#define max(_a, _b)     ((_a > _b) ? _a : _b)
+#endif
 
 #undef malloc
 #undef free
