@@ -162,7 +162,7 @@ int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, 
                 goto cleanup;
         }
         
-        if (urlParts.nScheme = INTERNET_SCHEME_HTTPS)
+        if (urlParts.nScheme == INTERNET_SCHEME_HTTPS)
                 requestFlags |= WINHTTP_FLAG_SECURE;
 
         ctx->hRequest = WinHttpOpenRequest(ctx->hConnect, L"GET", pathW, NULL, WINHTTP_NO_REFERER, accepts, requestFlags);
