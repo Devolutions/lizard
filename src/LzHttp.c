@@ -14,6 +14,7 @@ struct lz_http
         HINTERNET hRequest;
         uint8_t* readBuffer;
         wchar_t* userAgentW;
+        int recvTimeout;
 };
 
 void LzHttp_Free(LzHttp* ctx)
@@ -58,6 +59,7 @@ LzHttp* LzHttp_New(const char* userAgent)
         if (!userAgent)
                 goto error;
 
+        ctx->recvTimeout = 30 * 1000;
         ctx->userAgentW = LzUnicode_UTF8toUTF16_dup(userAgent);
 
         if (!ctx->userAgentW)
@@ -74,6 +76,16 @@ error:
         LzHttp_Free(ctx);
 
         return NULL;
+}
+
+int LzHttp_SetRecvTimeout(LzHttp* ctx, int timeout)
+{
+        if (timeout < -1)
+                return LZ_ERROR_PARAM;
+
+        ctx->recvTimeout = timeout;
+
+        return LZ_OK;
 }
 
 int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, void* param, DWORD* error)
@@ -117,8 +129,8 @@ int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, 
                 goto cleanup;
         }
 
-        hostnameW = malloc(urlParts.dwHostNameLength + 1);
-        pathW = malloc(urlParts.dwUrlPathLength + 1);
+        hostnameW = malloc((urlParts.dwHostNameLength + 1) * sizeof(wchar_t));
+        pathW = malloc((urlParts.dwUrlPathLength + 1) * sizeof(wchar_t));
 
         if (!hostnameW || !pathW)
         {
@@ -126,11 +138,8 @@ int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, 
                 goto cleanup;
         }
 
-        CopyMemory(hostnameW, urlParts.lpszHostName, urlParts.dwHostNameLength);
-        hostnameW[urlParts.dwHostNameLength] = '\0';
-
-        CopyMemory(pathW, urlParts.lpszUrlPath, urlParts.dwUrlPathLength);
-        pathW[urlParts.dwUrlPathLength] = '\0';
+        wcsncpy_s(hostnameW, urlParts.dwHostNameLength + 1, urlParts.lpszHostName, urlParts.dwHostNameLength);
+        wcsncpy_s(pathW, urlParts.dwUrlPathLength + 1, urlParts.lpszUrlPath, urlParts.dwUrlPathLength);
 
         ctx->hSession = WinHttpOpen(ctx->userAgentW, WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 
@@ -141,6 +150,7 @@ int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, 
                 goto cleanup;
         }
 
+        WinHttpSetTimeouts(ctx->hSession, 0, 60 * 1000, 30 * 1000, ctx->recvTimeout);
         WinHttpSetOption(ctx->hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, &protocols, sizeof(protocols));
 
         ctx->hConnect = WinHttpConnect(ctx->hSession, hostnameW, urlParts.nPort, 0);
