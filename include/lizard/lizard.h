@@ -164,6 +164,8 @@ LzHttp* LzHttp_New(const char* userAgent);
 void LzHttp_Free(LzHttp* ctx);
 
 int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, void* param, DWORD* error);
+char* LzHttp_Response(LzHttp* ctx);
+uint32_t LzHttp_ResponseLength(LzHttp* ctx);
 #endif
 
 #ifdef __cplusplus

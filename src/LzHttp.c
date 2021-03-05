@@ -13,6 +13,9 @@ struct lz_http
         HINTERNET hConnect;
         HINTERNET hRequest;
         uint8_t* readBuffer;
+        uint8_t* responseBuffer;
+        DWORD responseCapacity;
+        DWORD responseLength;
         wchar_t* userAgentW;
         int recvTimeout;
 };
@@ -42,8 +45,20 @@ void LzHttp_Free(LzHttp* ctx)
 
         if (ctx->readBuffer)
         {
-                GlobalFree((HGLOBAL) ctx->readBuffer);
+                free(ctx->readBuffer);
                 ctx->readBuffer = NULL;
+        }
+
+        if (ctx->responseBuffer)
+        {
+                free(ctx->responseBuffer);
+                ctx->responseBuffer = NULL;
+        }
+
+        if (ctx->userAgentW)
+        {
+                free(ctx->userAgentW);
+                ctx->userAgentW = NULL;
         }
 
         free(ctx);
@@ -65,7 +80,7 @@ LzHttp* LzHttp_New(const char* userAgent)
         if (!ctx->userAgentW)
                 goto error;
 
-        ctx->readBuffer = (uint8_t*) GlobalAlloc(GMEM_FIXED, LZ_HTTP_READ_BUFFER_SIZE);
+        ctx->readBuffer = (uint8_t*) malloc(LZ_HTTP_READ_BUFFER_SIZE);
 
         if (!ctx->readBuffer)
                 goto error;
@@ -88,6 +103,46 @@ int LzHttp_SetRecvTimeout(LzHttp* ctx, int timeout)
         return LZ_OK;
 }
 
+char* LzHttp_Response(LzHttp* ctx)
+{
+        if (!ctx)
+                return NULL;
+
+        if (ctx->responseBuffer)
+                ctx->responseBuffer[ctx->responseLength] = '\0';
+
+        return ctx->responseBuffer;
+}
+
+uint32_t LzHttp_ResponseLength(LzHttp* ctx)
+{
+        if (!ctx)
+                return 0;
+
+        return ctx->responseLength;
+}
+
+static int LzHttp_OnWriteResponse(void* param, LzHttp* ctx, uint8_t* data, DWORD len)
+{
+        if ((ctx->responseLength + len) > ctx->responseCapacity)
+        {
+                DWORD newCapacity = ctx->responseCapacity * 2;
+                uint8_t* newFileData = (uint8_t*) realloc(ctx->responseBuffer, newCapacity);
+
+                if (!newFileData)
+                        return LZ_ERROR_MEM;
+
+                ctx->responseBuffer = newFileData;
+                ctx->responseCapacity = newCapacity;
+        }
+
+        memcpy(ctx->responseBuffer + ctx->responseLength, data, len);
+
+        ctx->responseLength += len;
+
+        return 0;
+}
+
 int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, void* param, DWORD* error)
 {
         int result = LZ_ERROR_FAIL;
@@ -104,10 +159,25 @@ int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, 
         DWORD protocols = WINHTTP_FLAG_SECURE_PROTOCOL_SSL3 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1 |
                 WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_1 | WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
 
-        if (!ctx || !url || !writeCallback)
+        if (!ctx || !url)
         {
                 result = LZ_ERROR_PARAM;
                 goto cleanup;
+        }
+
+        if (!writeCallback)
+        {
+                ctx->responseCapacity = 20 * 1000;
+                ctx->responseBuffer = (LPSTR) malloc(ctx->responseCapacity);
+
+                if (!ctx->responseBuffer)
+                {
+                        result = LZ_ERROR_MEM;
+                        goto cleanup;
+                }
+
+                writeCallback = LzHttp_OnWriteResponse;
+                param = NULL;
         }
 
         urlW = LzUnicode_UTF8toUTF16_dup(url);
