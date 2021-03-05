@@ -112,12 +112,17 @@ set(LIZARD_SOURCES
 	LzJson.c)
 
 if(WIN32)
+	list(APPEND LIZARD_SOURCES LzHttp.c)
 	list(APPEND LIZARD_SOURCES LzWindows.c)
 endif()
 
 add_library(lizard STATIC
 	${LIZARD_SOURCES} ${LIZARD_HEADERS}
 	${LZMA_SOURCES} ${LZMA_HEADERS})
+
+if(WIN32)
+	target_link_libraries(lizard winhttp)
+endif()
 
 if(LIZARD_INSTALL)
 	target_include_directories(lizard

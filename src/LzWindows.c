@@ -8,7 +8,6 @@
 #define SERVICE_START_TIMEOUT 10000         // 10s
 #define SERVICE_STOP_TIMEOUT 10000          // 10s
 
-
 static HMODULE g_kernel32 = NULL;
 
 fnIsWow64Process pfnIsWow64Process = NULL;

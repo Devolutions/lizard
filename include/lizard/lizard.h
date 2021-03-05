@@ -127,7 +127,6 @@ LzArchive* LzArchive_New(void);
 void LzArchive_Free(LzArchive* ctx);
 
 #ifdef _WIN32
-
 int LzSetEnv(const char* name, const char* value);
 
 BOOL LzIsWow64();
@@ -156,6 +155,17 @@ BOOL LzGetModuleFileName(HMODULE module, LPSTR lpFileName, DWORD nSize);
 
 extern fnWow64DisableWow64FsRedirection pfnWow64DisableWow64FsRedirection;
 extern fnWow64RevertWow64FsRedirection pfnWow64RevertWow64FsRedirection;
+
+typedef struct lz_http LzHttp;
+
+typedef int(*fnHttpWriteFunction)(void* param, LzHttp* ctx, uint8_t* data, DWORD len);
+
+LzHttp* LzHttp_New(const char* userAgent);
+void LzHttp_Free(LzHttp* ctx);
+
+int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, void* param, DWORD* error);
+char* LzHttp_Response(LzHttp* ctx);
+uint32_t LzHttp_ResponseLength(LzHttp* ctx);
 #endif
 
 #ifdef __cplusplus
