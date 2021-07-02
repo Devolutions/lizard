@@ -127,6 +127,11 @@ LzArchive* LzArchive_New(void);
 void LzArchive_Free(LzArchive* ctx);
 
 #ifdef _WIN32
+#define LZ_URL_COMPONENT_SCHEME 0
+#define LZ_URL_COMPONENT_HOST   1
+#define LZ_URL_COMPONENT_PATH   2
+#define LZ_URL_COMPONENT_EXTRA  3
+
 int LzSetEnv(const char* name, const char* value);
 
 BOOL LzIsWow64();
@@ -166,6 +171,7 @@ void LzHttp_Free(LzHttp* ctx);
 int LzHttp_Get(LzHttp* ctx, const char* url, fnHttpWriteFunction writeCallback, void* param, DWORD* error);
 char* LzHttp_Response(LzHttp* ctx);
 uint32_t LzHttp_ResponseLength(LzHttp* ctx);
+int LzHttp_CrackUrl(const char* url, int component, char* result, size_t cch);
 #endif
 
 #ifdef __cplusplus
