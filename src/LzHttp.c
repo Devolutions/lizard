@@ -319,3 +319,87 @@ cleanup:
 
         return result;
 }
+
+int LzHttp_CrackUrl(const char* url, int component, char* pszResult, size_t cchResult)
+{
+        int result = LZ_ERROR_FAIL;
+        DWORD flags = 0;
+        wchar_t* urlW = NULL;
+        URL_COMPONENTSW urlParts;
+        wchar_t* compW = NULL;
+        DWORD compLen = 0;
+        char* comp = NULL;
+
+        if (!url)
+        {
+                result = LZ_ERROR_PARAM;
+                goto cleanup;
+        }
+
+        urlW = LzUnicode_UTF8toUTF16_dup(url);
+
+        if (!urlW)
+        {
+                result = LZ_ERROR_PARAM;
+                goto cleanup;
+        }
+
+        ZeroMemory(&urlParts, sizeof(urlParts));
+        urlParts.dwStructSize = sizeof(urlParts);
+        urlParts.dwSchemeLength = -1;
+        urlParts.dwHostNameLength = -1;
+        urlParts.dwUrlPathLength = -1;
+        urlParts.dwExtraInfoLength = -1;
+
+        if (!WinHttpCrackUrl(urlW, 0, flags, &urlParts))
+                goto cleanup;
+
+        switch (component)
+        {
+                case LZ_URL_COMPONENT_SCHEME:
+                        compW = urlParts.lpszScheme;
+                        compLen = urlParts.dwSchemeLength;
+                        break;
+                case LZ_URL_COMPONENT_HOST:
+                        compW = urlParts.lpszHostName;
+                         compLen = urlParts.dwHostNameLength;
+                        break;
+                case LZ_URL_COMPONENT_PATH:
+                        compW = urlParts.lpszUrlPath;
+                         compLen = urlParts.dwUrlPathLength;
+                        break;
+                case LZ_URL_COMPONENT_EXTRA:
+                        compW = urlParts.lpszExtraInfo;
+                         compLen = urlParts.dwExtraInfoLength;
+                        break;
+                default:
+                        result = LZ_ERROR_PARAM;
+                        goto cleanup;
+        }
+
+        comp = LzUnicode_UTF16toUTF8_dup(compW);
+
+        if (!comp)
+                goto cleanup;
+
+        if (compLen <= cchResult - 1)
+                result = LZ_OK;
+
+        strncpy(pszResult, comp, min(cchResult, compLen));
+        pszResult[cchResult - 1] = '\0';
+
+cleanup:
+        if (urlW)
+        {
+                free(urlW);
+                urlW = NULL;
+        }
+
+        if (comp)
+        {
+                free(comp);
+                comp = NULL;
+        }
+
+        return result;
+}
